@@ -1,0 +1,9 @@
+{
+  "name": "kopi-order",
+  "description": "A web application for managing group drink orders in Singapore kopitiam style!",
+  "buildpacks": [
+    {
+      "url": "heroku/go"
+    }
+  ]
+}

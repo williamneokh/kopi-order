@@ -1,0 +1,5 @@
+WAIT=5
+ATTEMPTS=3
+
+/health HTTP/1.1
+Host: localhost

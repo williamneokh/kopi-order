@@ -1,1 +1,1 @@
-web: /kopitiam-run
+web: ./kopi-order-server
