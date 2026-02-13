@@ -36,6 +36,7 @@ var (
 // Models
 type Room struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
+	Locked    bool      `gorm:"default:false" json:"locked"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -153,6 +154,8 @@ func main() {
 	r.Get("/room/{roomID}/admin", handleAdminView)
 	r.Get("/room/{roomID}/orders", handleGetOrders)
 	r.Post("/room/{roomID}/orders/{orderID}/toggle", handleToggleDelivered)
+	r.Post("/room/{roomID}/toggle-lock", handleToggleLock)
+	r.Delete("/order/{roomID}/{orderID}", handleDeleteOrder)
 	r.Get("/qr/{roomID}", handleQRCode)
 	r.Get("/health", handleHealthCheck)
 	r.Get("/manifest.json", handleManifest)
@@ -322,6 +325,7 @@ func handleOrderPage(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]interface{}{
 		"RoomID": roomID,
+		"Locked": room.Locked,
 	}
 	templates.ExecuteTemplate(w, "order.html", data)
 }
@@ -402,6 +406,7 @@ func handleAdminView(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"RoomID":    roomID,
 		"OrderLink": orderLink,
+		"Locked":    room.Locked,
 	}
 
 	if err := templates.ExecuteTemplate(w, "admin.html", data); err != nil {
@@ -519,7 +524,79 @@ func handleToggleDelivered(w http.ResponseWriter, r *http.Request) {
 		"Orders": distribution,
 		"RoomID": roomID,
 	}
+	w.Header().Set("HX-Trigger", "ordersChanged")
 	templates.ExecuteTemplate(w, "distribution_view.html", data)
+}
+
+func handleToggleLock(w http.ResponseWriter, r *http.Request) {
+	roomID := chi.URLParam(r, "roomID")
+
+	var room Room
+	if err := db.First(&room, "id = ?", roomID).Error; err != nil {
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	room.Locked = !room.Locked
+	db.Save(&room)
+
+	// Return the updated control fragment
+	data := map[string]interface{}{
+		"RoomID": roomID,
+		"Locked": room.Locked,
+	}
+	templates.ExecuteTemplate(w, "lock_controls.html", data)
+}
+
+func handleDeleteOrder(w http.ResponseWriter, r *http.Request) {
+	roomID := chi.URLParam(r, "roomID")
+	orderID := chi.URLParam(r, "orderID")
+
+	var room Room
+	if err := db.First(&room, "id = ?", roomID).Error; err != nil {
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	isHtmxRequest := r.Header.Get("HX-Request") == "true"
+	if room.Locked && !isHtmxRequest {
+		http.Error(w, "Orders are locked by the admin and cannot be deleted.", http.StatusForbidden)
+		return
+	}
+	// Use a transaction for safety.
+	tx := db.Begin()
+	result := tx.Delete(&Order{}, "id = ? AND room_id = ?", orderID, roomID)
+	if result.Error != nil {
+		tx.Rollback()
+		log.Printf("❌ Error deleting order: %v", result.Error)
+		http.Error(w, "Failed to delete order", http.StatusInternalServerError)
+		return
+	}
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		// This isn't strictly an error, but the client might have sent a stale ID.
+		// Responding with 404 is appropriate.
+		http.Error(w, "Order not found or does not belong to this room", http.StatusNotFound)
+		return
+	}
+	tx.Commit()
+
+	// For HTMX requests (from admin page), return the updated distribution list.
+	if r.Header.Get("HX-Request") == "true" {
+		var orders []Order
+		db.Where("room_id = ?", roomID).Order("created_at asc").Find(&orders)
+		distribution := distributeOrders(orders)
+		data := map[string]interface{}{
+			"Orders": distribution,
+			"RoomID": roomID,
+		}
+		w.Header().Set("HX-Trigger", "ordersChanged")
+		templates.ExecuteTemplate(w, "distribution_view.html", data)
+		return
+	}
+
+	// For regular API requests (from order page), return success with no content.
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleQRCode(w http.ResponseWriter, r *http.Request) {

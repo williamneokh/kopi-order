@@ -1,32 +1,34 @@
+{{if .Orders}}
 <div class="space-y-3">
-    <div class="text-sm text-gray-600 mb-4">
-        👥 <strong>Distribution View</strong> - Track who gets what
+    {{range .Orders}}
+    <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow-md transition-all duration-300 ease-in-out">
+        <div>
+            <p class="font-bold text-lg text-gray-900">{{.DrinkName}}</p>
+            <p class="text-sm text-gray-600">Ordered by: {{.Nickname}}</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <label class="inline-flex items-center cursor-pointer" title="Toggle delivery status">
+                <input type="checkbox" {{if .Delivered}}checked{{end}}
+                    hx-post="/room/{{$.RoomID}}/orders/{{.OrderID}}/toggle"
+                    hx-target="#orders-container"
+                    hx-swap="innerHTML"
+                    class="h-6 w-6 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+            </label>
+            <button
+                hx-delete="/order/{{$.RoomID}}/{{.OrderID}}"
+                hx-target="#orders-container"
+                hx-swap="innerHTML"
+                hx-confirm="Are you sure you want to delete '{{.DrinkName}}' for {{.Nickname}}?"
+                title="Delete this order"
+                class="text-red-500 hover:text-red-800 font-bold text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-100 transition-colors">
+                &times;
+            </button>
+        </div>
     </div>
-    {{if .Orders}}
-        {{range .Orders}}
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-amber-400 transition-colors cursor-pointer {{if .Delivered}}bg-gray-50 opacity-60{{end}}"
-            hx-post="/room/{{$.RoomID}}/orders/{{.OrderID}}/toggle" 
-            hx-target="#orders-container" hx-swap="innerHTML">
-            <div class="flex items-center gap-4">
-                <div class="text-2xl w-6 text-center">
-                    {{if .Delivered}}✅{{else}}🏃‍♂️{{end}}
-                </div>
-                <div class="flex-1">
-                    <div class="font-bold text-lg text-gray-800 {{if .Delivered}}line-through{{end}}">
-                        {{.Nickname}}
-                    </div>
-                    <div class="text-gray-600 {{if .Delivered}}line-through{{end}}">
-                        {{.DrinkName}}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {{end}}
-    {{else}}
-        <div class="text-center py-16">
-            <div class="text-6xl mb-4">👥</div>
-            <p class="text-xl text-gray-600">No orders yet</p>
-            <p class="text-gray-500 mt-2">Orders will appear here when people submit them</p>
-        </div>
     {{end}}
 </div>
+{{else}}
+<div class="text-center py-16">
+    <p class="text-gray-500 text-lg">No orders have been placed yet.</p>
+</div>
+{{end}}

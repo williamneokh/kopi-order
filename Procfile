@@ -1,1 +1,0 @@
-web: ./kopi-order-server

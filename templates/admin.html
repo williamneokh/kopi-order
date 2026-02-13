@@ -64,8 +64,13 @@
             </div>
         </div>
 
+        <!-- Lock Controls -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 text-center">
+            {{template "lock_controls.html" .}}
+        </div>
+
         <!-- Auto-refresh toggle -->
-        <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+        <div class="bg-white rounded-xl shadow-lg p-4 text-center mb-6">
             <label class="inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="auto-refresh-toggle" checked class="sr-only peer">
                 <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
@@ -118,16 +123,14 @@
         async function loadOrders() {
             const indicator = document.getElementById('refresh-indicator');
             indicator.classList.remove('opacity-0');
-            try {
-                const response = await fetch(`/room/${roomID}/orders?view=${currentView}`);
-                const html = await response.text();
-                document.getElementById('orders-container').innerHTML = html;
-            } catch (error) {
-                console.error("Failed to load orders:", error);
-            } finally {
+            
+            // Use htmx.ajax to make the request so it's aware of other htmx-driven
+            // requests (like delete). This prevents race conditions where a refresh
+            // overwrites the result of a delete/toggle action.
+            htmx.ajax('GET', `/room/${roomID}/orders?view=${currentView}`, '#orders-container').finally(() => {
                 // Use a timeout to make the indicator flash briefly before hiding
                 setTimeout(() => indicator.classList.add('opacity-0'), 500);
-            }
+            });
         }
 
         // Auto-refresh
@@ -146,6 +149,17 @@
                 startAutoRefresh();
             } else {
                 clearInterval(refreshInterval);
+            }
+        });
+
+        // Listen for custom event triggered by HTMX after a successful mutation
+        document.body.addEventListener('ordersChanged', function() {
+            // When an order is deleted or toggled, the server sends back the updated list.
+            // HTMX swaps it in. We then reset the auto-refresh timer to prevent a race
+            // condition where the timer fetches an old state right after the swap.
+            if (document.getElementById('auto-refresh-toggle').checked) {
+                console.log('Orders changed, resetting auto-refresh timer.');
+                startAutoRefresh();
             }
         });
     </script>
