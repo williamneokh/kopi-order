@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <link rel="apple-touch-icon" href="/static/icon-512.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#D97706">
+    <title>Place Your Order - Kopi Order</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-amber-50 to-orange-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-3xl font-bold text-amber-900">☕ Kopi Order</h1>
+                <a href="/" title="Start a New Run" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-xl">
+                    🏠
+                </a>
+            </div>
+            <p class="text-gray-600">Place your order below</p>
+        </div>
+
+        <!-- Nickname Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <!-- Nickname Input Form (initially shown if no nickname) -->
+            <div id="nickname-entry">
+                <label class="block text-lg font-bold text-gray-800 mb-3">Your Nickname:</label>
+                <input 
+                    type="text" 
+                    id="nickname-input" 
+                    placeholder="e.g., Ah Beng, Sarah, Ahmad"
+                    class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-amber-500 focus:outline-none"
+                    autocomplete="off">
+                <button 
+                    onclick="saveNickname()"
+                    class="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Continue to Order
+                </button>
+            </div>
+
+            <!-- Nickname Display (initially hidden) -->
+            <div id="nickname-display" class="hidden">
+                <div class="flex items-center justify-between">
+                    <p class="text-lg text-gray-800">Ordering for: <strong id="nickname-text" class="font-bold"></strong></p>
+                    <button onclick="changeNickname()" class="text-amber-600 hover:underline font-semibold">Change</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drink Builder (Initially Hidden) -->
+        <div id="drink-builder" class="hidden">
+            <!-- Tabs -->
+            <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
+                <div class="flex border-b">
+                    <button onclick="switchTab('brewed')" id="tab-brewed" class="flex-1 py-4 px-2 font-bold text-sm sm:text-base border-b-4 border-amber-600 text-amber-900">
+                        Kopi/Teh
+                    </button>
+                    <button onclick="switchTab('others')" id="tab-others" class="flex-1 py-4 px-2 font-bold text-sm sm:text-base border-b-4 border-transparent text-gray-500 hover:text-gray-700">
+                        Others
+                    </button>
+                    <button onclick="switchTab('canned')" id="tab-canned" class="flex-1 py-4 px-2 font-bold text-sm sm:text-base border-b-4 border-transparent text-gray-500 hover:text-gray-700">
+                        Canned
+                    </button>
+                    <button onclick="switchTab('writein')" id="tab-writein" class="flex-1 py-4 px-2 font-bold text-sm sm:text-base border-b-4 border-transparent text-gray-500 hover:text-gray-700">
+                        Write-in
+                    </button>
+                </div>
+
+                <!-- Tab Content: Brewed Drinks -->
+                <div id="content-brewed" class="p-6">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Build Your Drink</h3>
+                    
+                    <!-- Base Selection -->
+                    <div class="mb-6">
+                        <label class="block font-bold text-gray-700 mb-3">Base:</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="selectBase('Kopi')" class="base-btn py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium text-lg">
+                                Kopi
+                            </button>
+                            <button onclick="selectBase('Teh')" class="base-btn py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium text-lg">
+                                Teh
+                            </button>
+                            <button onclick="selectBase('Yuan Yang')" class="base-btn py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium text-lg">
+                                Yuan Yang
+                            </button>
+                            <button onclick="selectBase('Milo')" class="base-btn py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium text-lg">
+                                Milo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modifiers (Hidden until base selected) -->
+                    <div id="modifiers-section" class="hidden">
+                        <!-- Milk Style -->
+                        <div class="mb-6">
+                            <label class="block font-bold text-gray-700 mb-3">Milk:</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button onclick="selectMilk('Standard')" class="milk-btn py-3 px-2 rounded-lg border-2 border-amber-500 bg-amber-50 font-medium">
+                                    Standard
+                                </button>
+                                <button onclick="selectMilk('O')" class="milk-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    O
+                                </button>
+                                <button onclick="selectMilk('C')" class="milk-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    C
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sweetness -->
+                        <div class="mb-6">
+                            <label class="block font-bold text-gray-700 mb-3">Sweetness:</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="selectSugar('Standard')" class="sugar-btn py-3 px-2 rounded-lg border-2 border-amber-500 bg-amber-50 font-medium">
+                                    Standard
+                                </button>
+                                <button onclick="selectSugar('Siu Dai')" class="sugar-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Siu Dai
+                                </button>
+                                <button onclick="selectSugar('Ga Dai')" class="sugar-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Ga Dai
+                                </button>
+                                <button onclick="selectSugar('Kosong')" class="sugar-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Kosong
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Strength -->
+                        <div class="mb-6">
+                            <label class="block font-bold text-gray-700 mb-3">Strength:</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="selectStrength('Standard')" class="strength-btn py-3 px-2 rounded-lg border-2 border-amber-500 bg-amber-50 font-medium">
+                                    Standard
+                                </button>
+                                <button onclick="selectStrength('Gao')" class="strength-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Gao
+                                </button>
+                                <button onclick="selectStrength('Po')" class="strength-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Po
+                                </button>
+                                <button onclick="selectStrength('Di Lo')" class="strength-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Di Lo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Temperature -->
+                        <div class="mb-6">
+                            <label class="block font-bold text-gray-700 mb-3">Temperature:</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button onclick="selectTemp('Hot')" class="temp-btn py-3 px-2 rounded-lg border-2 border-amber-500 bg-amber-50 font-medium">
+                                    Hot
+                                </button>
+                                <button onclick="selectTemp('Peng')" class="temp-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Peng
+                                </button>
+                                <button onclick="selectTemp('Pua Sio')" class="temp-btn py-3 px-2 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                                    Pua Sio
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Preview & Add -->
+                        <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-4">
+                            <div class="text-sm text-gray-600 mb-2">Your Drink:</div>
+                            <div id="brewed-preview" class="text-xl font-bold text-amber-900">Select a base to start</div>
+                        </div>
+                        <button onclick="submitBrewedDrink()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-lg">
+                            🚀 Submit This Drink
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Others -->
+                <div id="content-others" class="p-6 hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Select Drink</h3>
+                    <div class="space-y-4">
+                        <div class="border-2 border-gray-300 rounded-lg p-4">
+                            <button onclick="selectOther('Lemon Tea')" class="w-full text-left font-bold text-lg mb-3 hover:text-amber-600">
+                                Lemon Tea
+                            </button>
+                            <div id="lemon-tea-temp" class="hidden mt-3 flex gap-3">
+                                <button onclick="submitOtherDrink('Lemon Tea', 'Hot')" class="flex-1 py-3 bg-orange-100 hover:bg-orange-200 rounded-lg font-medium">
+                                    Hot
+                                </button>
+                                <button onclick="submitOtherDrink('Lemon Tea', 'Cold')" class="flex-1 py-3 bg-blue-100 hover:bg-blue-200 rounded-lg font-medium">
+                                    Cold
+                                </button>
+                            </div>
+                        </div>
+                        <div class="border-2 border-gray-300 rounded-lg p-4">
+                            <button onclick="selectOther('Barley')" class="w-full text-left font-bold text-lg mb-3 hover:text-amber-600">
+                                Barley
+                            </button>
+                            <div id="barley-temp" class="hidden mt-3 flex gap-3">
+                                <button onclick="submitOtherDrink('Barley', 'Warm')" class="flex-1 py-3 bg-orange-100 hover:bg-orange-200 rounded-lg font-medium">
+                                    Warm
+                                </button>
+                                <button onclick="submitOtherDrink('Barley', 'Cold')" class="flex-1 py-3 bg-blue-100 hover:bg-blue-200 rounded-lg font-medium">
+                                    Cold
+                                </button>
+                            </div>
+                        </div>
+                        <div class="border-2 border-gray-300 rounded-lg p-4">
+                            <button onclick="selectOther('Lime Juice')" class="w-full text-left font-bold text-lg mb-3 hover:text-amber-600">
+                                Lime Juice
+                            </button>
+                            <div id="lime-juice-temp" class="hidden mt-3 flex gap-3">
+                                <button onclick="submitOtherDrink('Lime Juice', 'Hot')" class="flex-1 py-3 bg-orange-100 hover:bg-orange-200 rounded-lg font-medium">
+                                    Hot
+                                </button>
+                                <button onclick="submitOtherDrink('Lime Juice', 'Cold')" class="flex-1 py-3 bg-blue-100 hover:bg-blue-200 rounded-lg font-medium">
+                                    Cold
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Canned -->
+                <div id="content-canned" class="p-6 hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Select Canned Drink</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="submitCannedDrink('100 Plus')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-green-500 hover:bg-green-50 font-medium">
+                            100 Plus
+                        </button>
+                        <button onclick="submitCannedDrink('Coke')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 font-medium">
+                            Coke
+                        </button>
+                        <button onclick="submitCannedDrink('Coke Zero')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 font-medium">
+                            Coke Zero
+                        </button>
+                        <button onclick="submitCannedDrink('Sprite')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-green-500 hover:bg-green-50 font-medium">
+                            Sprite
+                        </button>
+                        <button onclick="submitCannedDrink('Kickapoo')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-yellow-500 hover:bg-yellow-50 font-medium">
+                            Kickapoo
+                        </button>
+                        <button onclick="submitCannedDrink('Green Tea')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-green-500 hover:bg-green-50 font-medium">
+                            Green Tea
+                        </button>
+                        <button onclick="submitCannedDrink('Oolong Tea')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-amber-500 hover:bg-amber-50 font-medium">
+                            Oolong Tea
+                        </button>
+                        <button onclick="submitCannedDrink('Chrysanthemum Tea')" class="py-4 px-4 rounded-lg border-2 border-gray-300 hover:border-yellow-500 hover:bg-yellow-50 font-medium">
+                            Chrysanthemum
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Write-in -->
+                <div id="content-writein" class="p-6 hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Custom Order</h3>
+                    <textarea 
+                        id="writein-input" 
+                        placeholder="E.g., Kopi C Kosong Gao, Teh O Peng, etc."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-500 focus:outline-none h-32 text-lg"
+                        autocomplete="off"></textarea>
+                    <button onclick="submitWriteinDrink()" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-lg">
+                        🚀 Submit This Drink
+                    </button>
+                </div>
+            </div>
+
+            <!-- Your Submitted Orders -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center justify-between">
+                    <span>✅ Your Submitted Orders</span>
+                    <button onclick="loadMyOrders()" class="text-sm text-amber-600 hover:underline font-semibold">Refresh</button>
+                </h3>
+                <div id="my-orders-list" class="space-y-2">
+                    <p class="text-gray-400 text-center py-8">You haven't ordered anything yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nickname = localStorage.getItem('kopi_order_nickname') || '';
+        let currentBrewedDrink = {
+            base: '',
+            milk: 'Standard',
+            sugar: 'Standard',
+            strength: 'Standard',
+            temp: 'Hot'
+        };
+
+        // Initialize
+        if (nickname) {
+            document.getElementById('nickname-input').value = nickname;
+            showDrinkBuilder();
+        } else {
+            // If no nickname, hide the display part and the drink builder
+            document.getElementById('nickname-display').classList.add('hidden');
+            document.getElementById('drink-builder').classList.add('hidden');
+        }
+
+        function saveNickname() {
+            nickname = document.getElementById('nickname-input').value.trim();
+            if (!nickname) {
+                alert('Please enter a nickname.');
+                return;
+            }
+            localStorage.setItem('kopi_order_nickname', nickname);
+            showDrinkBuilder();
+        }
+
+        function showDrinkBuilder() {
+            // Update nickname display
+            document.getElementById('nickname-text').textContent = nickname;
+            document.getElementById('nickname-entry').classList.add('hidden');
+            document.getElementById('nickname-display').classList.remove('hidden');
+            
+            // Show the main drink builder interface
+            document.getElementById('drink-builder').classList.remove('hidden');
+            loadMyOrders();
+        }
+
+        function changeNickname() {
+            // Show the nickname input form again, allowing user to change their name.
+            // The drink builder remains visible so they don't lose context.
+            document.getElementById('nickname-display').classList.add('hidden');
+            document.getElementById('nickname-entry').classList.remove('hidden');
+            // Focus on the input for better UX
+            document.getElementById('nickname-input').focus();
+        }
+
+        function switchTab(tab) {
+            // Update tab buttons
+            ['brewed', 'others', 'canned', 'writein'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                const content = document.getElementById('content-' + t);
+                if (t === tab) {
+                    btn.classList.add('border-amber-600', 'text-amber-900');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-amber-600', 'text-amber-900');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function selectBase(base) {
+            currentBrewedDrink.base = base;
+            currentBrewedDrink.milk = 'Standard';
+            currentBrewedDrink.sugar = 'Standard';
+            currentBrewedDrink.strength = 'Standard';
+            currentBrewedDrink.temp = 'Hot';
+            
+            // Highlight selected base
+            document.querySelectorAll('.base-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'bg-amber-50');
+                btn.classList.add('border-gray-300');
+            });
+            event.target.classList.add('border-amber-500', 'bg-amber-50');
+            
+            // Show modifiers
+            document.getElementById('modifiers-section').classList.remove('hidden');
+            
+            // Reset modifier buttons
+            resetModifierButtons();
+            updateBrewedPreview();
+        }
+
+        function resetModifierButtons() {
+            const resetGroup = (selector) => {
+                document.querySelectorAll(selector).forEach((btn, i) => {
+                    const isDefault = i === 0;
+                    btn.classList.toggle('border-amber-500', isDefault);
+                    btn.classList.toggle('bg-amber-50', isDefault);
+                    btn.classList.toggle('border-gray-300', !isDefault);
+                });
+            };
+            resetGroup('.milk-btn');
+            resetGroup('.sugar-btn');
+            resetGroup('.strength-btn');
+            resetGroup('.temp-btn');
+        }
+
+        function selectMilk(milk) {
+            currentBrewedDrink.milk = milk;
+            if (milk === 'O') {
+                currentBrewedDrink.milk = 'O';
+            }
+            document.querySelectorAll('.milk-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'bg-amber-50');
+                btn.classList.add('border-gray-300');
+            });
+            event.target.classList.add('border-amber-500', 'bg-amber-50');
+            updateBrewedPreview();
+        }
+
+        function selectSugar(sugar) {
+            currentBrewedDrink.sugar = sugar;
+            document.querySelectorAll('.sugar-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'bg-amber-50');
+                btn.classList.add('border-gray-300');
+            });
+            event.target.classList.add('border-amber-500', 'bg-amber-50');
+            updateBrewedPreview();
+        }
+
+        function selectStrength(strength) {
+            currentBrewedDrink.strength = strength;
+            document.querySelectorAll('.strength-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'bg-amber-50');
+                btn.classList.add('border-gray-300');
+            });
+            event.target.classList.add('border-amber-500', 'bg-amber-50');
+            updateBrewedPreview();
+        }
+
+        function selectTemp(temp) {
+            currentBrewedDrink.temp = temp;
+            document.querySelectorAll('.temp-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'bg-amber-50');
+                btn.classList.add('border-gray-300');
+            });
+            event.target.classList.add('border-amber-500', 'bg-amber-50');
+            updateBrewedPreview();
+        }
+
+        function getBrewedDrinkName() {
+            if (!currentBrewedDrink.base) return '';
+            
+            let parts = [currentBrewedDrink.base];
+            
+            if (currentBrewedDrink.milk !== 'Standard') parts.push(currentBrewedDrink.milk);
+            if (currentBrewedDrink.sugar !== 'Standard') parts.push(currentBrewedDrink.sugar);
+            if (currentBrewedDrink.strength !== 'Standard') parts.push(currentBrewedDrink.strength);
+            if (currentBrewedDrink.temp !== 'Hot') parts.push(currentBrewedDrink.temp);
+            
+            return parts.join(' ');
+        }
+
+        function updateBrewedPreview() {
+            if (!currentBrewedDrink.base) return;
+            const drinkName = getBrewedDrinkName();
+            document.getElementById('brewed-preview').textContent = drinkName || 'Select a base to start';
+        }
+
+        function submitBrewedDrink() {
+            const drinkName = getBrewedDrinkName();
+            if (!drinkName) {
+                alert('Please select a base drink');
+                return;
+            }
+
+            submitSingleOrder({ type: 'brewed', name: drinkName }).then((isClosing) => {
+                if (isClosing) return; // Don't reset UI if the tab is closing
+                // Reset UI after successful submission
+                currentBrewedDrink = { base: '', milk: 'Standard', sugar: 'Standard', strength: 'Standard', temp: 'Hot' };
+                document.getElementById('modifiers-section').classList.add('hidden');
+                document.querySelectorAll('.base-btn').forEach(btn => {
+                    btn.classList.remove('border-amber-500', 'bg-amber-50');
+                    btn.classList.add('border-gray-300');
+                });
+                document.getElementById('brewed-preview').textContent = 'Select a base to start';
+            });
+        }
+
+        function selectOther(drink) {
+            // Hide all temp selectors
+            document.querySelectorAll('[id$="-temp"]').forEach(el => el.classList.add('hidden'));
+            // Show selected
+            document.getElementById(drink.toLowerCase().replace(' ', '-') + '-temp').classList.remove('hidden');
+        }
+
+        function submitOtherDrink(drink, temp) {
+            const drinkName = `${drink} (${temp})`;
+            submitSingleOrder({ type: 'others', name: drinkName }).then((isClosing) => {
+                if (isClosing) return;
+                // Hide temp selector after submission
+                document.querySelectorAll('[id$="-temp"]').forEach(el => el.classList.add('hidden'));
+            });
+        }
+
+        function submitCannedDrink(drink) {
+            submitSingleOrder({ type: 'canned', name: drink });
+        }
+
+        function submitWriteinDrink() {
+            const text = document.getElementById('writein-input').value.trim();
+            if (!text) {
+                alert('Please enter your custom order');
+                return;
+            }
+            submitSingleOrder({ type: 'writein', name: text }).then((isClosing) => {
+                if (isClosing) return;
+                document.getElementById('writein-input').value = '';
+            });
+        }
+
+        async function loadMyOrders() {
+            const listEl = document.getElementById('my-orders-list');
+            listEl.innerHTML = '<p class="text-gray-500 text-center py-4">Loading your orders...</p>';
+
+            try {
+                const response = await fetch(`/room/{{.RoomID}}/orders?view=distribution`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await response.json();
+                
+                const myOrders = data.Orders.filter(order => order.Nickname === nickname);
+
+                if (myOrders.length === 0) {
+                    listEl.innerHTML = '<p class="text-gray-400 text-center py-8">You haven\'t ordered anything yet.</p>';
+                } else {
+                    listEl.innerHTML = myOrders.map(order => `
+                        <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                            <span class="font-medium">${order.DrinkName}</span>
+                            <span class="text-sm text-green-600 font-bold">✓ Submitted</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                listEl.innerHTML = '<p class="text-red-500 text-center py-4">Could not load your orders.</p>';
+                console.error("Failed to load my orders:", error);
+            }
+        }
+
+        async function submitSingleOrder(item) {
+            const roomID = '{{.RoomID}}';
+            
+            // Simple loading indicator by disabling all buttons to prevent double-clicks
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(b => b.disabled = true);
+            
+            try {
+                const response = await fetch(`/order/${roomID}/batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nickname: nickname,
+                        orders: [item] // Send as an array with one item
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server responded with an error');
+                }
+
+                // Check if this window was opened from another window (e.g., the admin page via "Place My Order")
+                if (window.opener) {
+                    // This is the admin. Show a confirmation and close the tab to return them to the admin view.
+                    alert('✅ Order submitted successfully! This tab will now close.');
+                    setTimeout(() => window.close(), 500);
+                    return true; // Let caller know the window is closing.
+                } else {
+                    // This is an invitee. Show a confirmation, refresh their order list, and keep the page open.
+                    alert('✅ Order submitted successfully!');
+                    await loadMyOrders();
+                    allButtons.forEach(b => b.disabled = false); // Re-enable buttons to allow more orders
+                    return false; // Let caller know the window is staying open.
+                }
+
+            } catch (error) {
+                alert('❌ Failed to submit order. Please try again.');
+                console.error(error);
+                // Re-enable buttons on failure so the user can try again.
+                allButtons.forEach(b => b.disabled = false);
+                return false; // Let caller know the window is staying open.
+            }
+        }
+    </script>
+</body>
+</html>

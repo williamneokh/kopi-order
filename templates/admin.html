@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <link rel="apple-touch-icon" href="/static/icon-512.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#D97706">
+    <title>Admin - Kopi Order</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-amber-50 to-orange-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Header with QR and Link -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-amber-900">🎯 Kopi Order</h1>
+                <a href="/" title="Start a New Run" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-xl">
+                    🏠
+                </a>
+            </div>
+            <p class="text-gray-600 mb-4">Share this link/QR to collect orders:</p>
+            
+            <div class="flex flex-col md:flex-row gap-4 items-start">
+                <!-- QR Code -->
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <img id="qr-code" src="" alt="QR Code" class="w-48 h-48">
+                </div>
+                
+                <!-- Link -->
+                <div class="flex-1">
+                    <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-3">
+                        <div class="text-sm text-gray-600 mb-2">Order Link:</div>
+                        <div class="font-mono text-sm break-all">{{.OrderLink}}</div>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <button onclick="copyLink()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-lg">
+                            📋 Copy Link
+                        </button>
+                        <a href="{{.OrderLink}}" target="_blank" rel="opener" class="w-full text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">
+                            ✏️ Place My Order
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Tabs -->
+        <div class="bg-white rounded-xl shadow-lg mb-6">
+            <div class="flex border-b">
+                <button onclick="switchView('consolidated')" id="tab-consolidated" class="flex-1 py-4 px-4 font-bold border-b-4 border-amber-600 text-amber-900">
+                    📋 Consolidated (Stall)
+                </button>
+                <button onclick="switchView('distribution')" id="tab-distribution" class="flex-1 py-4 px-4 font-bold border-b-4 border-transparent text-gray-500 hover:text-gray-700">
+                    👥 Distribution
+                </button>
+            </div>
+
+            <!-- Orders Container -->
+            <div id="orders-container" class="p-6">
+                <!-- Will be populated by HTMX -->
+            </div>
+        </div>
+
+        <!-- Auto-refresh toggle -->
+        <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="auto-refresh-toggle" checked class="sr-only peer">
+                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                <span class="ms-3 text-sm font-medium text-gray-900">
+                    Auto-refresh (5s) <span id="refresh-indicator" class="inline-block opacity-0 transition-opacity">🔄</span>
+                </span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        let currentView = 'consolidated';
+        let refreshInterval;
+        const roomID = '{{.RoomID}}';
+
+        // Save the last visited room ID to allow resuming the session
+        localStorage.setItem('kopi_order_last_room', roomID);
+
+        // Load QR code
+        fetch(`/qr/${roomID}`)
+            .then(r => r.text())
+            .then(data => {
+                document.getElementById('qr-code').src = data;
+            });
+
+        function copyLink() {
+            const link = '{{.OrderLink}}';
+            navigator.clipboard.writeText(link).then(() => {
+                alert('✅ Link copied to clipboard!');
+            });
+        }
+
+        function switchView(view) {
+            currentView = view;
+
+            const tabs = ['consolidated', 'distribution'];
+            tabs.forEach(tabId => {
+                const tabElement = document.getElementById(`tab-${tabId}`);
+                const isActive = tabId === view;
+
+                tabElement.classList.toggle('border-amber-600', isActive);
+                tabElement.classList.toggle('text-amber-900', isActive);
+                tabElement.classList.toggle('border-transparent', !isActive);
+                tabElement.classList.toggle('text-gray-500', !isActive);
+            });
+
+            loadOrders();
+        }
+
+        async function loadOrders() {
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.classList.remove('opacity-0');
+            try {
+                const response = await fetch(`/room/${roomID}/orders?view=${currentView}`);
+                const html = await response.text();
+                document.getElementById('orders-container').innerHTML = html;
+            } catch (error) {
+                console.error("Failed to load orders:", error);
+            } finally {
+                // Use a timeout to make the indicator flash briefly before hiding
+                setTimeout(() => indicator.classList.add('opacity-0'), 500);
+            }
+        }
+
+        // Auto-refresh
+        const startAutoRefresh = () => {
+            if (refreshInterval) clearInterval(refreshInterval); // Always clear previous interval
+            refreshInterval = setInterval(loadOrders, 5000);
+        };
+
+        // Initial load
+        loadOrders();
+        startAutoRefresh();
+
+        // Event listener for the toggle
+        document.getElementById('auto-refresh-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                startAutoRefresh();
+            } else {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

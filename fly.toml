@@ -1,0 +1,51 @@
+# fly.toml app configuration file generated for kopitiam-run on 2026-02-11T00:32:55+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'kopitiam-run'
+primary_region = 'sin'
+
+[build]
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# A service defines a public-facing endpoint for your app.
+# The `[http_service]` is a simpler format, but we are switching to the more
+# explicit `[[services]]` block to ensure the configuration is clear and robust.
+# This is a common debugging step for applications that restart unexpectedly.
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  processes = ["app"] # This service is handled by the default 'app' process
+  auto_stop_machines = true
+  auto_start_machines = true
+  # For initial deployment, we'll force one machine to stay running to ensure stability.
+  # You can change this back to 0 later to enable scale-to-zero.
+  min_machines_running = 1
+
+  # Add an explicit health check to give the app time to start up.
+  # The 'grace_period' is crucial as it allows the app to initialize
+  # before the first health check is performed.
+  [[services.http_checks]]
+    interval = "15s"
+    timeout = "10s"
+    method = "GET"
+    path = "/health"
+    grace_period = "15s"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[mounts]
+  source="kopitiam_data"
+  destination="/data"

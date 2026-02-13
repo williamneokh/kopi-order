@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <link rel="apple-touch-icon" href="/static/icon-512.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#D97706">
+    <title>Kopi Order</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: block;
+        }
+        .htmx-request.htmx-indicator {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 to-orange-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl p-8 mt-20">
+            <!-- Logo/Header -->
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">☕</div>
+                <h1 class="text-4xl font-bold text-amber-900 mb-2">Kopi Order</h1>
+                <p class="text-gray-600">Simplify your kopi orders, lah!</p>
+            </div>
+
+            <!-- Start Button -->
+            <button 
+                hx-post="/room/create" 
+                hx-swap="none"
+                hx-indicator="#loading"
+                class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg transform transition hover:scale-105">
+                🚀 Start Kopi Order
+            </button>
+
+            <!-- Resume Section (hidden by default) -->
+            <div id="resume-section" class="hidden mt-4">
+                <p class="text-center text-gray-600 mb-2 text-sm">Or, resume your last session:</p>
+                <div class="flex gap-2">
+                    <a id="resume-link" href="#" class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl text-lg">
+                        Resume Last Run
+                    </a>
+                    <button onclick="clearLastRoom(event)" title="Forget last session" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-xl">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Loading indicator -->
+            <div id="loading" class="htmx-indicator text-center mt-4">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                <p class="text-gray-600 mt-2">Creating your kopi order...</p>
+            </div>
+
+            <!-- Info -->
+            <div class="mt-8 text-center text-sm text-gray-500">
+                <p>Create a group order, share the link,</p>
+                <p>and collect everyone's kopi order!</p>
+            </div>
+        </div>
+
+    </div>
+    
+    <script>
+        // On page load, check for a previous session
+        document.addEventListener('DOMContentLoaded', () => {
+            const lastRoomID = localStorage.getItem('kopi_order_last_room');
+            if (lastRoomID) {
+                const resumeSection = document.getElementById('resume-section');
+                const resumeLink = document.getElementById('resume-link');
+                
+                resumeLink.href = `/room/${lastRoomID}/admin`;
+                resumeSection.classList.remove('hidden');
+            }
+        });
+
+        function clearLastRoom(event) {
+            event.preventDefault(); // Prevent any form submission if it's inside a form
+            if (confirm('Are you sure you want to forget the last session? You will lose access to it if you don\'t have the link.')) {
+                localStorage.removeItem('kopi_order_last_room');
+                document.getElementById('resume-section').classList.add('hidden');
+            }
+        }
+
+        // Debug HTMX events
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            console.log('HTMX Request completed:', evt.detail);
+        });
+        
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            console.error('HTMX Error:', evt.detail);
+            alert('Error creating room. Please try the alternative method below.');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Compiled binary from `go build`
+kopi-order-server
+
+# Local SQLite database
+kopi-order.db
+
+# IDE and editor directories
+.vscode/
+.idea/
+
+# macOS specific files
+.DS_Store
+
+# Go build cache
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib

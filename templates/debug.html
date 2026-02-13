@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page - Kopi Order</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-3xl font-bold mb-6">Kopi Order - Debug Page</h1>
+        
+        <div class="space-y-4">
+            <div>
+                <h2 class="text-xl font-bold mb-2">Test 1: Direct Link</h2>
+                <a href="/room/test1234/admin" class="bg-blue-600 text-white px-4 py-2 rounded inline-block">
+                    Go to Admin (Direct)
+                </a>
+            </div>
+            
+            <div>
+                <h2 class="text-xl font-bold mb-2">Test 2: Create Room with HTMX</h2>
+                <button 
+                    hx-post="/room/create" 
+                    hx-swap="none"
+                    class="bg-green-600 text-white px-4 py-2 rounded">
+                    Create Room (HTMX)
+                </button>
+            </div>
+            
+            <div>
+                <h2 class="text-xl font-bold mb-2">Test 3: Create Room with Form</h2>
+                <form action="/room/create" method="POST">
+                    <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">
+                        Create Room (Form)
+                    </button>
+                </form>
+            </div>
+            
+            <div>
+                <h2 class="text-xl font-bold mb-2">Test 4: JavaScript Create</h2>
+                <button onclick="createRoom()" class="bg-orange-600 text-white px-4 py-2 rounded">
+                    Create Room (JS)
+                </button>
+            </div>
+            
+            <div id="result" class="mt-4 p-4 bg-gray-100 rounded hidden">
+                <h3 class="font-bold">Result:</h3>
+                <pre id="result-text" class="mt-2 text-sm"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function createRoom() {
+            const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('result-text');
+            
+            try {
+                const response = await fetch('/room/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                resultDiv.classList.remove('hidden');
+                resultText.textContent = `Status: ${response.status}\n`;
+                resultText.textContent += `Redirect Header: ${response.headers.get('HX-Redirect')}\n`;
+                resultText.textContent += `Location Header: ${response.headers.get('Location')}\n`;
+                
+                const text = await response.text();
+                resultText.textContent += `Body: ${text}`;
+                
+                // Try to redirect
+                const redirect = response.headers.get('HX-Redirect') || response.headers.get('Location');
+                if (redirect) {
+                    console.log('Redirecting to:', redirect);
+                    setTimeout(() => {
+                        window.location.href = redirect;
+                    }, 2000);
+                }
+            } catch (error) {
+                resultDiv.classList.remove('hidden');
+                resultText.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
