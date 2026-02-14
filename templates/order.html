@@ -53,8 +53,14 @@
 
         <!-- Drink Builder (Initially Hidden) -->
         <div id="drink-builder" class="hidden">
+            <!-- Locked Message -->
+            <div id="locked-message" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-xl shadow-lg text-center mb-6">
+                <p class="font-bold text-xl">🔒 Orders are Locked</p>
+                <p class="mt-2">The admin has locked this order run. No new orders can be placed.</p>
+            </div>
+
             <!-- Tabs -->
-            <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
+            <div id="order-creation-ui" class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
                 <div class="flex border-b">
                     <button onclick="switchTab('brewed')" id="tab-brewed" class="flex-1 py-4 px-2 font-bold text-sm sm:text-base border-b-4 border-amber-600 text-amber-900">
                         Kopi/Teh
@@ -317,8 +323,18 @@
             document.getElementById('nickname-entry').classList.add('hidden');
             document.getElementById('nickname-display').classList.remove('hidden');
             
-            // Show the main drink builder interface
+            // Show the main interface area
             document.getElementById('drink-builder').classList.remove('hidden');
+
+            if (isRoomLocked) {
+                document.getElementById('order-creation-ui').classList.add('hidden');
+                document.getElementById('locked-message').classList.remove('hidden');
+            } else {
+                document.getElementById('order-creation-ui').classList.remove('hidden');
+                document.getElementById('locked-message').classList.add('hidden');
+            }
+            
+            // Always load the user's orders so they can see what they've ordered
             loadMyOrders();
         }
 
@@ -590,6 +606,15 @@
                         orders: [item] // Send as an array with one item
                     })
                 });
+
+                if (response.status === 403) { // Forbidden
+                    alert('Orders are now locked by the admin and new orders cannot be placed.');
+                    // Hide the builder and show the locked message
+                    document.getElementById('order-creation-ui').classList.add('hidden');
+                    document.getElementById('locked-message').classList.remove('hidden');
+                    allButtons.forEach(b => b.disabled = false); // Re-enable buttons
+                    return false; // Let caller know it failed
+                }
 
                 if (!response.ok) {
                     throw new Error('Server responded with an error');

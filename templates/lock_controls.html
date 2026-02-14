@@ -3,11 +3,11 @@
     <button hx-post="/room/{{.RoomID}}/toggle-lock" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
         🔓 Unlock Orders
     </button>
-    <p class="text-sm text-center text-red-600 mt-2">Orders are locked. Invitees cannot delete their orders.</p>
+    <p class="text-sm text-center text-red-600 mt-2">Orders are locked. Invitees cannot place new orders or delete existing ones.</p>
     {{else}}
     <button hx-post="/room/{{.RoomID}}/toggle-lock" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">
         🔒 Lock All Orders
     </button>
-    <p class="text-sm text-center text-gray-600 mt-2">Locking prevents invitees from deleting their orders.</p>
+    <p class="text-sm text-center text-gray-600 mt-2">Locking prevents invitees from placing new orders or deleting existing ones.</p>
     {{end}}
 </div>

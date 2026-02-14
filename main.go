@@ -354,6 +354,19 @@ func handleSubmitOrder(w http.ResponseWriter, r *http.Request) {
 func handleBatchSubmitOrder(w http.ResponseWriter, r *http.Request) {
 	roomID := chi.URLParam(r, "roomID")
 
+	// Check if room is locked
+	var room Room
+	if err := db.First(&room, "id = ?", roomID).Error; err != nil {
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	// If the room is locked, no new orders can be placed.
+	if room.Locked {
+		http.Error(w, "Orders are locked by the admin and new orders cannot be placed.", http.StatusForbidden)
+		return
+	}
+
 	var req BatchOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid batch request", http.StatusBadRequest)

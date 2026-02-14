@@ -1,6 +1,6 @@
 {
-    "name": "Kopitiam Run",
-    "short_name": "Kopi Run",
+    "name": "Kopi Order",
+    "short_name": "Kopi Order",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#FFFBEB",
